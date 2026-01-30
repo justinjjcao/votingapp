@@ -129,4 +129,24 @@ dmypy.json
 .pyre/
 
 # Idea
+.idea
 .idea/
+
+# VS Code
+.vscode
+.vscode/
+
+# Shell configs
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+
+# Git configs
+.gitconfig
+.gitmodules
+
+# Tool configs
+.mcp.json
+.ripgreprc

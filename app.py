@@ -1,14 +1,20 @@
 import os
+import secrets
 
-from flask import Flask
+from flask import Flask, render_template, request, session, redirect, url_for
 from flask_cors import CORS, cross_origin
 from random import randrange
 import simplejson as json
 import boto3
 from multiprocessing import Pool
 from multiprocessing import cpu_count
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
+
+# Password for the /votes page (set via environment variable)
+VOTES_PASSWORD = os.getenv('VOTES_PASSWORD', 'admin123')
 
 cors = CORS(app, resources={r"/api/*": {"Access-Control-Allow-Origin": "*"}})
 
@@ -110,6 +116,40 @@ def getheavyvotes():
     pool = Pool(processes)
     pool.map(f, range(processes))
     return string_votes
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('votes_authenticated'):
+            return redirect(url_for('votes_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/votes')
+@login_required
+def votes():
+    return render_template('votes.html')
+
+@app.route('/votes/login', methods=['GET', 'POST'])
+def votes_login():
+    if session.get('votes_authenticated'):
+        return redirect(url_for('votes'))
+
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if password == VOTES_PASSWORD:
+            session['votes_authenticated'] = True
+            return redirect(url_for('votes'))
+        else:
+            error = 'Invalid password. Please try again.'
+
+    return render_template('login.html', error=error)
+
+@app.route('/votes/logout')
+def votes_logout():
+    session.pop('votes_authenticated', None)
+    return redirect(url_for('votes_login'))
 
 if __name__ == '__main__':
    app.run(host=os.getenv('IP', '0.0.0.0'), port=int(os.getenv('PORT', 8080)))
