@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Voting Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --success-color: #10b981;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-color);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .card-outback::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .card-bucadibeppo::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .card-ihop::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .card-chipotle::before { background: linear-gradient(90deg, #10b981, #059669); }
+
+        .restaurant-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-outback .restaurant-icon { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+        .card-bucadibeppo .restaurant-icon { background: linear-gradient(135deg, #fee2e2, #fecaca); }
+        .card-ihop .restaurant-icon { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+        .card-chipotle .restaurant-icon { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+
+        .restaurant-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .restaurant-tagline {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .vote-count {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .vote-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .vote-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--secondary-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .card-outback .progress-fill { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .card-bucadibeppo .progress-fill { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .card-ihop .progress-fill { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .card-chipotle .progress-fill { background: linear-gradient(90deg, #10b981, #059669); }
+
+        .vote-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .card-outback .vote-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .card-bucadibeppo .vote-btn { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .card-ihop .vote-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .card-chipotle .vote-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+
+        .vote-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .vote-btn:active {
+            transform: scale(0.98);
+        }
+
+        .vote-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stats-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .refresh-btn {
+            background: var(--secondary-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .refresh-btn:hover {
+            background: #e2e8f0;
+            color: var(--text-primary);
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        .stats-table th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .stats-table td {
+            border-bottom: 1px solid var(--secondary-color);
+        }
+
+        .stats-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stats-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .table-restaurant {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .table-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .percentage-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--text-primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow-hover);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(150%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logout-btn {
+                position: static;
+                display: block;
+                margin: 0 auto 1.5rem;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/votes/logout" class="logout-btn">Logout</a>
+
+    <div class="container">
+        <header>
+            <h1>Restaurant Voting Dashboard</h1>
+            <p class="subtitle">Cast your vote for your favorite restaurant</p>
+        </header>
+
+        <div class="grid">
+            <div class="card card-outback">
+                <div class="restaurant-icon">🥩</div>
+                <h2 class="restaurant-name">Outback Steakhouse</h2>
+                <p class="restaurant-tagline">No Rules, Just Right</p>
+                <div class="vote-count">
+                    <span class="vote-number" id="votes-outback">0</span>
+                    <span class="vote-label">votes</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-outback" style="width: 0%"></div>
+                </div>
+                <button class="vote-btn" onclick="vote('outback')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>
+                    Vote for Outback
+                </button>
+            </div>
+
+            <div class="card card-bucadibeppo">
+                <div class="restaurant-icon">🍝</div>
+                <h2 class="restaurant-name">Buca di Beppo</h2>
+                <p class="restaurant-tagline">Italian Family Style</p>
+                <div class="vote-count">
+                    <span class="vote-number" id="votes-bucadibeppo">0</span>
+                    <span class="vote-label">votes</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-bucadibeppo" style="width: 0%"></div>
+                </div>
+                <button class="vote-btn" onclick="vote('bucadibeppo')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>
+                    Vote for Buca di Beppo
+                </button>
+            </div>
+
+            <div class="card card-ihop">
+                <div class="restaurant-icon">🥞</div>
+                <h2 class="restaurant-name">IHOP</h2>
+                <p class="restaurant-tagline">Come Hungry, Leave Happy</p>
+                <div class="vote-count">
+                    <span class="vote-number" id="votes-ihop">0</span>
+                    <span class="vote-label">votes</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-ihop" style="width: 0%"></div>
+                </div>
+                <button class="vote-btn" onclick="vote('ihop')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>
+                    Vote for IHOP
+                </button>
+            </div>
+
+            <div class="card card-chipotle">
+                <div class="restaurant-icon">🌯</div>
+                <h2 class="restaurant-name">Chipotle</h2>
+                <p class="restaurant-tagline">Food With Integrity</p>
+                <div class="vote-count">
+                    <span class="vote-number" id="votes-chipotle">0</span>
+                    <span class="vote-label">votes</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-chipotle" style="width: 0%"></div>
+                </div>
+                <button class="vote-btn" onclick="vote('chipotle')">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                    </svg>
+                    Vote for Chipotle
+                </button>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stats-header">
+                <h3 class="stats-title">Voting Statistics</h3>
+                <button class="refresh-btn" onclick="refreshVotes()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Restaurant</th>
+                        <th>Votes</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody id="stats-tbody">
+                    <tr>
+                        <td>
+                            <div class="table-restaurant">
+                                <div class="table-icon" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">🥩</div>
+                                <span>Outback Steakhouse</span>
+                            </div>
+                        </td>
+                        <td id="table-votes-outback">0</td>
+                        <td><span class="percentage-badge" style="background: #fef3c7; color: #92400e;" id="table-pct-outback">0%</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="table-restaurant">
+                                <div class="table-icon" style="background: linear-gradient(135deg, #fee2e2, #fecaca);">🍝</div>
+                                <span>Buca di Beppo</span>
+                            </div>
+                        </td>
+                        <td id="table-votes-bucadibeppo">0</td>
+                        <td><span class="percentage-badge" style="background: #fee2e2; color: #991b1b;" id="table-pct-bucadibeppo">0%</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="table-restaurant">
+                                <div class="table-icon" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">🥞</div>
+                                <span>IHOP</span>
+                            </div>
+                        </td>
+                        <td id="table-votes-ihop">0</td>
+                        <td><span class="percentage-badge" style="background: #dbeafe; color: #1e40af;" id="table-pct-ihop">0%</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="table-restaurant">
+                                <div class="table-icon" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">🌯</div>
+                                <span>Chipotle</span>
+                            </div>
+                        </td>
+                        <td id="table-votes-chipotle">0</td>
+                        <td><span class="percentage-badge" style="background: #d1fae5; color: #065f46;" id="table-pct-chipotle">0%</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toast-message">Vote recorded!</span>
+    </div>
+
+    <script>
+        const restaurants = ['outback', 'bucadibeppo', 'ihop', 'chipotle'];
+        const displayNames = {
+            'outback': 'Outback Steakhouse',
+            'bucadibeppo': 'Buca di Beppo',
+            'ihop': 'IHOP',
+            'chipotle': 'Chipotle'
+        };
+
+        async function fetchVotes() {
+            try {
+                const response = await fetch('/api/getvotes');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching votes:', error);
+                return [];
+            }
+        }
+
+        function updateUI(votes) {
+            const total = votes.reduce((sum, v) => sum + v.value, 0);
+
+            votes.forEach(item => {
+                const percentage = total > 0 ? (item.value / total * 100).toFixed(1) : 0;
+
+                document.getElementById(`votes-${item.name}`).textContent = item.value;
+                document.getElementById(`progress-${item.name}`).style.width = `${percentage}%`;
+                document.getElementById(`table-votes-${item.name}`).textContent = item.value;
+                document.getElementById(`table-pct-${item.name}`).textContent = `${percentage}%`;
+            });
+        }
+
+        async function vote(restaurant) {
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+
+            try {
+                await fetch(`/api/${restaurant}`);
+                showToast(`Vote recorded for ${displayNames[restaurant]}!`);
+                await refreshVotes();
+            } catch (error) {
+                console.error('Error voting:', error);
+                showToast('Error recording vote. Please try again.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function refreshVotes() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.classList.add('spinning');
+
+            const votes = await fetchVotes();
+            updateUI(votes);
+
+            setTimeout(() => {
+                btn.classList.remove('spinning');
+            }, 500);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.textContent = message;
+            toast.classList.add('show', 'toast-success');
+
+            setTimeout(() => {
+                toast.classList.remove('show', 'toast-success');
+            }, 3000);
+        }
+
+        // Initial load
+        refreshVotes();
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshVotes, 30000);
+    </script>
+</body>
+</html>
