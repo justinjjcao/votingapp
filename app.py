@@ -1,6 +1,7 @@
 import os
+from functools import wraps
 
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_cors import CORS, cross_origin
 from random import randrange
 import simplejson as json
@@ -9,6 +10,10 @@ from multiprocessing import Pool
 from multiprocessing import cpu_count
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'voting-app-default-secret-key-change-in-production')
+
+# Password for the /votes page (configurable via environment variable)
+VOTES_PAGE_PASSWORD = os.getenv('VOTES_PAGE_PASSWORD', 'votingapp123')
 
 cors = CORS(app, resources={r"/api/*": {"Access-Control-Allow-Origin": "*"}})
 
@@ -53,7 +58,7 @@ def updatevote(restaurant, votes):
 
 @app.route('/')
 def home():
-    return "<h1>Welcome to the Voting App</h1><p><b>To vote, you can call the following APIs:</b></p><p>/api/outback</p><p>/api/bucadibeppo</p><p>/api/ihop</p><p>/api/chipotle</p><b>To query the votes, you can call the following APIs:</b><p>/api/getvotes</p><p>/api/getheavyvotes (this generates artificial CPU/memory load)</p>"
+    return "<h1>Welcome to the Voting App</h1><p><b>To vote, you can call the following APIs:</b></p><p>/api/outback</p><p>/api/bucadibeppo</p><p>/api/ihop</p><p>/api/chipotle</p><b>To query the votes, you can call the following APIs:</b><p>/api/getvotes</p><p>/api/getheavyvotes (this generates artificial CPU/memory load)</p><hr><p><b>Or use the interactive voting dashboard:</b></p><p><a href='/votes'>/votes</a> (password protected)</p>"
 
 @app.route("/api/outback")
 def outback():
@@ -110,6 +115,46 @@ def getheavyvotes():
     pool = Pool(processes)
     pool.map(f, range(processes))
     return string_votes
+
+
+# Authentication decorator for password-protected routes
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect(url_for('votes_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route("/votes")
+@login_required
+def votes_page():
+    return render_template('votes.html')
+
+
+@app.route("/votes/login", methods=['GET', 'POST'])
+def votes_login():
+    if session.get('authenticated'):
+        return redirect(url_for('votes_page'))
+
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if password == VOTES_PAGE_PASSWORD:
+            session['authenticated'] = True
+            return redirect(url_for('votes_page'))
+        else:
+            error = 'Invalid password. Please try again.'
+
+    return render_template('login.html', error=error)
+
+
+@app.route("/votes/logout")
+def votes_logout():
+    session.pop('authenticated', None)
+    return redirect(url_for('votes_login'))
+
 
 if __name__ == '__main__':
    app.run(host=os.getenv('IP', '0.0.0.0'), port=int(os.getenv('PORT', 8080)))
