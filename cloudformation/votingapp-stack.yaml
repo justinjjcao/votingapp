@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VotingApp infrastructure - DynamoDB table and IAM role for App Runner
+
+Parameters:
+  TableName:
+    Type: String
+    Default: votingapp-restaurants
+    Description: Name of the DynamoDB table
+  RoleName:
+    Type: String
+    Default: votingapp-role
+    Description: Name of the IAM role for App Runner
+
+Resources:
+  VotingAppTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      AttributeDefinitions:
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: name
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  VotingAppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: votingapp-ddb-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:*
+                Resource: !GetAtt VotingAppTable.Arn
+
+  InitializeTableFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt InitializerRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import os
+
+          def handler(event, context):
+              if event['RequestType'] == 'Delete':
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  return
+              try:
+                  ddb = boto3.resource('dynamodb')
+                  table = ddb.Table(os.environ['TABLE_NAME'])
+                  for name in ['ihop', 'outback', 'bucadibeppo', 'chipotle']:
+                      table.put_item(Item={'name': name, 'restaurantcount': 0})
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {'Error': str(e)})
+
+  InitializerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ddb-write
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:PutItem
+                Resource: !GetAtt VotingAppTable.Arn
+
+  InitializeTable:
+    Type: Custom::InitializeTable
+    DependsOn: VotingAppTable
+    Properties:
+      ServiceToken: !GetAtt InitializeTableFunction.Arn
+
+Outputs:
+  TableName:
+    Value: !Ref VotingAppTable
+  TableArn:
+    Value: !GetAtt VotingAppTable.Arn
+  RoleArn:
+    Value: !GetAtt VotingAppRole.Arn
+  RoleName:
+    Value: !Ref VotingAppRole
