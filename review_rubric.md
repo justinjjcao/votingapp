@@ -156,22 +156,22 @@ To verify authentication worked, manually inspect `votes_page.html` - it should 
 | SC-5 | Security | No XSS or NoSQL injection vulnerabilities | Yes | - |
 | **Regression** |
 | RG-1 | Regression | Existing endpoints still work | Yes | - |
-| RG-2 | Regression | CORS headers present | No | 4 |
-| RG-3 | Regression | No breaking env var changes | No | 3 |
+| RG-2 | Regression | CORS headers present | No | 2 |
+| RG-3 | Regression | No breaking env var changes | No | 1 |
 | **Error Handling** |
 | EH-1 | Error Handling | No browser console errors on page load | Yes | - |
 | EH-2 | Error Handling | Vote action completes without errors | Yes | - |
-| EH-3 | Error Handling | No unhandled exceptions (DB accessible) | No | 5 |
-| EH-4 | Error Handling | Graceful error when DB unreachable | No | 4 |
+| EH-3 | Error Handling | No unhandled exceptions (DB accessible) | No | 3 |
+| EH-4 | Error Handling | Graceful error when DB unreachable | No | 2 |
 | **UX/Polish** |
-| UX-1 | UX/Polish | Clear feedback on failed login | No | 5 |
-| UX-2 | UX/Polish | Vote button-restaurant association clear | No | 5 |
-| UX-3 | UX/Polish | CSS styling and title tag present | No | 4 |
-| UX-4 | UX/Polish | Text is readable | No | 5 |
-| UX-5 | UX/Polish | Password configuration documented | No | 4 |
-| UX-6 | UX/Polish | Code quality (no debug code, consistent style) | No | 4 |
+| UX-1 | UX/Polish | Clear feedback on failed login | No | 3 |
+| UX-2 | UX/Polish | Vote button-restaurant association clear | No | 3 |
+| UX-3 | UX/Polish | CSS styling and title tag present | No | 2 |
+| UX-4 | UX/Polish | Text is readable | No | 3 |
+| UX-5 | UX/Polish | Password configuration documented | No | 2 |
+| UX-6 | UX/Polish | Code quality (no debug code, consistent style) | No | 2 |
 
-**Totals:** 25 tests | 15 blocking | 10 non-blocking (43 pts)
+**Totals:** 25 tests | 15 blocking | 10 non-blocking (23 pts)
 
 ---
 
@@ -544,7 +544,7 @@ chipotle: OK
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | api | A, B, C, D | 4 |
+| No | api | A, B, C, D | 2 |
 
 ```bash
 curl -sI http://localhost:8080/api/getvotes | grep -i "access-control"
@@ -560,7 +560,7 @@ Expected: `Access-Control-Allow-Origin: *`
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | build | None | 3 |
+| No | build | None | 1 |
 
 ```bash
 # Hard-required vars with no default (expect: 0 - codebase uses getenv)
@@ -634,7 +634,7 @@ Graceful behavior under normal and failure conditions.
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | ux | A, B, C, D | 5 |
+| No | ux | A, B, C, D | 3 |
 
 **Steps:**
 1. Make API request:
@@ -656,7 +656,7 @@ Graceful behavior under normal and failure conditions.
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | ux | A, B, D (skip C) | 4 |
+| No | ux | A, B, D (skip C) | 2 |
 
 **Steps:**
 1. Start app with invalid table name:
@@ -687,7 +687,7 @@ User experience and code quality (all non-blocking).
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | ux | A, B, C, D, E | 5 |
+| No | ux | A, B, C, D, E | 3 |
 
 **Steps:** After entering wrong password (from SC-3), check for error indication.
 
@@ -700,7 +700,7 @@ User experience and code quality (all non-blocking).
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | ux | A, B, C, D, E | 5 |
+| No | ux | A, B, C, D, E | 3 |
 
 **Steps:**
 1. On `/votes` page, verify each vote button is clearly associated with its restaurant (same row, labeled, or visually grouped)
@@ -715,7 +715,7 @@ User experience and code quality (all non-blocking).
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | build | None | 4 |
+| No | build | None | 2 |
 
 ```bash
 # CSS present (expect: >= 1)
@@ -739,7 +739,7 @@ Expected:
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | ux | A, B, C, D, E | 5 |
+| No | ux | A, B, C, D, E | 3 |
 
 **Visual check on `/votes` page:**
 - Can you read restaurant names, vote counts, button labels?
@@ -754,7 +754,7 @@ Expected:
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | build | None | 4 |
+| No | build | None | 2 |
 
 ```bash
 grep -iE "password|votes_password|authentication" README.md app.py 2>/dev/null | head -5
@@ -769,7 +769,7 @@ grep -iE "password|votes_password|authentication" README.md app.py 2>/dev/null |
 
 | Blocking | Method | Setup | Weight |
 |----------|--------|-------|--------|
-| No | build | None | 4 |
+| No | build | None | 2 |
 
 ```bash
 # Debug code (expect: 0 or only legitimate logging)
@@ -789,9 +789,9 @@ grep -cin "TODO\|FIXME\|HACK\|XXX" app.py
 | Rating | Requirement |
 |--------|-------------|
 | **Pass** | All 15 blocking criteria pass |
-| **Excellent** | Pass + ≥37 non-blocking points (87%+) |
-| **Good** | Pass + 31-36 points (71-86%) |
-| **Acceptable** | Pass + 24-30 points (56-70%) |
-| **Needs Work** | Pass + <24 points (<56%) |
+| **Excellent** | Pass + ≥20 non-blocking points (87%+) |
+| **Good** | Pass + 16-19 points (70-86%) |
+| **Acceptable** | Pass + 13-15 points (56-69%) |
+| **Needs Work** | Pass + <13 points (<56%) |
 
-**Non-blocking points:** RG-2(4) + RG-3(3) + EH-3(5) + EH-4(4) + UX-1(5) + UX-2(5) + UX-3(4) + UX-4(5) + UX-5(4) + UX-6(4) = **43 total**
+**Non-blocking points:** RG-2(2) + RG-3(1) + EH-3(3) + EH-4(2) + UX-1(3) + UX-2(3) + UX-3(2) + UX-4(3) + UX-5(2) + UX-6(2) = **23 total**
